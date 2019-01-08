@@ -1,0 +1,1453 @@
+%class Logic
+%header Logic.h
+%start MainMap::MainState
+
+%map StirMap
+%%
+MainState 
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "main"]
+	MapState
+        {
+            PressButton("map");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+MapState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "map"]
+	StirState
+        {
+			StartCounter("enemy");
+            PressButton("stir");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+StirState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "stir" && ctxt.StateName() == "again"]
+	AgainState
+        {
+			PressButton("again");
+        }
+
+    Next [ctxt.PageName() == "no_diamonds"]
+	StirReturn
+        {
+			PressButton("close");
+        }		
+		
+	Next [ctxt.PageName() == "stir_warning_buy" && ctxt.GetValue("stir_update_soon") != 1]
+	StirReturn
+        {
+			PressButton("cancel");
+        }
+		
+	Next [ctxt.PageName() == "stir_warning_buy" && ctxt.GetValue("stir_update_soon") == 1]
+	StirState
+        {
+			PressButton("ok");
+        }	
+		
+	Next [ctxt.PageName() == "stir_opponent"]
+	StirState 
+	{
+		PressButton("close");
+	}		
+		
+    Next [ctxt.PageName() == "stir" && ctxt.GetCounter("enemy") < 13]
+	OpponentState
+        {
+			PressButton(ctxt.GetCounter("enemy") + 1);
+			IncCounter("enemy");
+        }
+		
+    Next [ctxt.PageName() == "stir" && ctxt.GetCounter("enemy") >= 13]
+	MapReturn
+        {
+            PressButton("close");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+AgainState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "stir_buy" && ctxt.GetValue("stir_buy") != 1]
+	StirReturn
+		{
+			PressButton("close");
+		}
+	
+	Next [ctxt.PageName() == "stir_buy" && ctxt.GetValue("stir_buy") == 1]
+	StirBuyPause
+		{
+			PressButton("ok");
+		}
+	
+	Next [ctxt.PageName() == "stir"]
+	StirState {}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+
+StirBuyPause
+Entry
+    {
+        StartTimer("state_timeout");
+		StartTimer("stir_buy_timeout");
+    }
+{
+	Next [ctxt.GetTimer("stir_buy_timeout") >= 10000]
+    StirState {}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+
+OpponentState
+Entry
+    {
+        StartTimer("state_timeout");
+		StartTimer("opponent_timeout");
+    }
+{
+    Next [ctxt.PageName() == "stir" && ctxt.GetTimer("opponent_timeout") >= ctxt.GetValue("opponent_timeout")]
+	StirState {}
+		
+    Next [ctxt.PageName() == "stir_opponent"]
+	BattleLoadState
+        {
+            PressButton("start");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+BattleLoadState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "load"]
+	BattleState {}
+	
+	Next [ctxt.PageName() == "battle"]
+	BattleEndState {}
+	
+	Next [ctxt.PageName() == "stir_few"]
+	OpponentReturn 
+	{
+		PressButton("close");
+	}
+	
+	Next [ctxt.PageName() == "warning_hp"]
+	OpponentState 
+	{
+		PressButton("close");
+	}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+BattleState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "battle"]
+	BattleEndState {}
+	
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+BattleEndState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "battle_end_defeat" && ctxt.StateName() == "home"]
+	EndLoadState
+        {
+            PressButton("close");
+        }
+	
+	Next [ctxt.PageName() == "battle_end_victory" && ctxt.StateName() == "home"]
+	EndLoadState
+        {
+            PressButton("close");
+        }
+	
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+EndLoadState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "load"]
+	MainReturn {}
+	
+	Next [ctxt.PageName() == "main"]
+	Return {}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+OpponentReturn
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "stir_opponent"]
+	StirReturn
+        {
+            PressButton("close");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+StirReturn
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "stir"]
+	MapReturn
+        {
+            PressButton("close");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+MapReturn
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "map"]
+	MainReturn
+        {
+            PressButton("close");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+MainReturn
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "main"]
+	Return {}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+Return
+{
+	Next	pop(Success) {}
+}
+
+Error
+{
+	Next    pop(Error) {}
+}
+
+%%
+
+//======================================================================================================================
+//======================================================================================================================
+//======================================================================================================================
+//======================================================================================================================
+//======================================================================================================================
+//======================================================================================================================
+
+%map ArenaMap
+%%
+
+
+MainState 
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "main"]
+	MapState
+        {
+            PressButton("map");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+
+MapState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "map"]
+	ArenaMainState
+        {
+            PressButton("arena");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+ArenaMainState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+	Next [ctxt.PageName() == "arena_find"]
+	ArenaChoice 
+	{
+		StartCounter("enemy");
+	}
+	
+    Next [ctxt.PageName() == "arena_choice"]
+	ArenaChoice 
+	{
+		StartCounter("enemy");
+	}
+	
+    Next [ctxt.PageName() == "arena_main" && (ctxt.GetValue("arena_ticket") == 1 || ctxt.GetValue("arena_ticket") == 3) && ctxt.StateName() == "ticket"]
+	ConfirmStartState
+        {
+            PressButton("start");
+        }
+	
+	Next [ctxt.PageName() == "arena_main" && (ctxt.GetValue("arena_ticket") == 0 || ctxt.GetValue("arena_ticket") == 2) && ctxt.StateName() == "food"]
+	ConfirmStartState
+        {
+            PressButton("start");
+        }
+	
+	Next [ctxt.PageName() == "arena_main" && (ctxt.GetValue("arena_ticket") == 1 || ctxt.GetValue("arena_ticket") == 3) && ctxt.StateName() == "food"]
+	ArenaMainState
+        {
+            PressButton("ticket");
+        }
+	
+	Next [ctxt.PageName() == "arena_main" && (ctxt.GetValue("arena_ticket") == 0 || ctxt.GetValue("arena_ticket") == 2) && ctxt.StateName() == "ticket"]
+	ArenaMainState
+        {
+            PressButton("food");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+ConfirmStartState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [(ctxt.PageName() == "arena_few" || ctxt.PageName() == "ticket_few") && (ctxt.GetValue("arena_ticket") == 0 || ctxt.GetValue("arena_ticket") == 1)]
+	ArenaReturn
+        {
+            PressButton("close");
+        }
+
+    Next [(ctxt.PageName() == "arena_few" || ctxt.PageName() == "ticket_few") && (ctxt.GetValue("arena_ticket") == 2 || ctxt.GetValue("arena_ticket") == 3)]
+	ArenaReuse
+        {
+            PressButton("close");
+        }
+		
+    Next [ctxt.PageName() == "arena_confirm_start"]
+	ArenaFindState
+        {
+            PressButton("start");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+ArenaReuse
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+	Next [ctxt.PageName() == "arena_main" && ctxt.GetValue("arena_ticket") == 2 && ctxt.StateName() == "food"]
+	ArenaReuse
+        {
+            PressButton("ticket");
+        }
+	
+	Next [ctxt.PageName() == "arena_main" && ctxt.GetValue("arena_ticket") == 2 && ctxt.StateName() == "ticket"]
+	ConfirmStartReuse
+        {
+            PressButton("start");
+        }
+	
+	Next [ctxt.PageName() == "arena_main" && ctxt.GetValue("arena_ticket") == 3 && ctxt.StateName() == "ticket"]
+	ArenaReuse
+        {
+            PressButton("food");
+        }
+	
+	Next [ctxt.PageName() == "arena_main" && ctxt.GetValue("arena_ticket") == 3 && ctxt.StateName() == "food"]
+	ConfirmStartReuse
+        {
+            PressButton("start");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+ConfirmStartReuse
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [(ctxt.PageName() == "arena_few" || ctxt.PageName() == "ticket_few")]
+	ArenaReturn
+        {
+            PressButton("close");
+        }
+		
+    Next [ctxt.PageName() == "arena_confirm_start"]
+	ArenaFindState
+        {
+            PressButton("start");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+ArenaFindState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "arena_find"]
+	ArenaChoice 
+	{
+		StartCounter("enemy");
+	}
+	
+	Next [ctxt.PageName() == "arena_choice"]
+	ArenaChoice 
+	{
+		StartCounter("enemy");
+	}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+ArenaChoice
+Entry
+    {
+        StartTimer("state_timeout");
+		StartTimer("unknown_timeout");
+    }
+{
+	Next [ctxt.PageName() == "arena_find"]
+	ArenaChoice {}
+	
+	Next [ctxt.PageName() == "unknown" && ctxt.GetTimer("unknown_timeout") >= 1000]
+	nil 
+		{
+			StartTimer("unknown_timeout");
+			PressButton("2");
+		}
+		
+	Next [ctxt.PageName() == "arena_choice" && (ctxt.StateName() == "end" || ctxt.StateName() == "reward") && ctxt.GetValue("arena_stats") != 0]
+	ArenaStats 
+	{
+		StartCounter("enemy");
+	}		
+		
+	Next [ctxt.PageName() == "arena_choice" && (ctxt.StateName() == "end" || ctxt.StateName() == "reward") && ctxt.GetValue("arena_stats") == 0]
+	ArenaReturn
+        {
+			PressButton("close");
+        }
+	
+	Next [ctxt.PageName() == "arena_choice" && ctxt.StateName() == "home" && ctxt.GetCounter("enemy") < 15]
+	OpponentInfoState
+        {
+			PressButton(ctxt.GetCounter("enemy") + 1);
+        }
+		
+    Next [ctxt.PageName() == "arena_choice" && ctxt.StateName() == "home" && ctxt.GetCounter("enemy") >= 15]
+	EndPhaseState
+        {
+			StartCounter("enemy");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+OpponentInfoState
+Entry
+    {
+        StartTimer("state_timeout");
+		StartTimer("opponent_timeout");
+		StartTimer("unknown_timeout");
+    }
+{
+	Next [ctxt.PageName() == "unknown" && ctxt.GetTimer("unknown_timeout") >= 1000]
+	nil 
+		{
+			StartTimer("unknown_timeout");
+			PressButton("2");
+		}
+		
+	Next [ctxt.PageName() == "arena_choice" && ctxt.GetTimer("opponent_timeout") >= ctxt.GetValue("opponent_timeout")]
+	ArenaChoice 
+	{
+		GetOpponentInfo(ctxt.GetCounter("enemy"));
+		IncCounter("enemy");
+	}
+	
+    Next [ctxt.PageName() == "opponent"]
+	ArenaChoice 
+	{
+		GetOpponentInfo(ctxt.GetCounter("enemy"));
+		IncCounter("enemy");
+		PressButton("close");
+	}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+ArenaStats
+Entry
+    {
+        StartTimer("state_timeout");
+		StartTimer("unknown_timeout");
+    }
+{
+	Next [ctxt.PageName() == "unknown" && ctxt.GetTimer("unknown_timeout") >= 1000]
+	nil 
+		{
+			StartTimer("unknown_timeout");
+			PressButton("2");
+		}
+	
+	Next [ctxt.PageName() == "arena_choice" && (ctxt.StateName() == "end" || ctxt.StateName() == "reward") && ctxt.GetCounter("enemy") < 15]
+	OpponentStats
+        {
+			PressButton(ctxt.GetCounter("enemy") + 1);
+        }
+		
+    Next [ctxt.PageName() == "arena_choice" && (ctxt.StateName() == "end" || ctxt.StateName() == "reward") && ctxt.GetCounter("enemy") >= 15]
+	ArenaReturn
+        {
+			WriteLogResult();
+			PressButton("close");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+OpponentStats
+Entry
+    {
+        StartTimer("state_timeout");
+		StartTimer("opponent_timeout");
+		StartTimer("unknown_timeout");
+    }
+{
+	Next [ctxt.PageName() == "unknown" && ctxt.GetTimer("unknown_timeout") >= 1000]
+	nil 
+		{
+			StartTimer("unknown_timeout");
+			PressButton("2");
+		}
+		
+	Next [ctxt.PageName() == "arena_choice" && ctxt.GetTimer("opponent_timeout") >= ctxt.GetValue("opponent_timeout")]
+	ArenaStats 
+	{
+		GetOpponentInfo(ctxt.GetCounter("enemy"));
+		IncCounter("enemy");
+	}
+	
+    Next [ctxt.PageName() == "opponent"]
+	ArenaStats 
+	{
+		GetOpponentInfo(ctxt.GetCounter("enemy"));
+		IncCounter("enemy");
+		PressButton("close");
+	}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+
+
+EndPhaseState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+	Next [ctxt.PageName() == "arena_choice" && ctxt.IsValidPhase()]
+	OpponentTryState 
+	{
+		PressButton(ctxt.FindOpponent() + 1);
+	}
+	
+	Next [ctxt.PageName() == "arena_choice" && !ctxt.IsValidPhase()]
+	ArenaChoice {}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+OpponentTryState
+Entry
+    {
+        StartTimer("state_timeout");
+		StartTimer("opponent_timeout");
+    }
+{
+	Next [ctxt.PageName() == "arena_choice" && ctxt.GetTimer("opponent_timeout") >= ctxt.GetValue("opponent_timeout")]
+	ArenaChoice {}
+	
+	Next [ctxt.PageName() == "opponent" && ctxt.IsValidOpponent(ctxt.FindOpponent())]
+	BattleLoadState
+	{
+		PressButton("start");
+	}
+	
+    Next [ctxt.PageName() == "opponent" && !ctxt.IsValidOpponent(ctxt.FindOpponent())]
+	ArenaChoice 
+	{
+		PressButton("close");
+	}
+	
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+
+BattleLoadState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "load"]
+	BattleState {}
+	
+	Next [ctxt.PageName() == "battle"]
+	BattleEndState {}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+BattleState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "battle"]
+	BattleEndState {}
+	
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+BattleEndState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+
+
+    Next [ctxt.PageName() == "battle_end_defeat" && ctxt.StateName() == "home" && ctxt.GetValue("arena_stats") != 2]
+	EndLoadState
+        {
+            PressButton("close");
+        }
+	
+	Next [ctxt.PageName() == "battle_end_victory" && ctxt.StateName() == "home" && ctxt.GetValue("arena_stats") != 2]
+	EndLoadState
+        {
+            PressButton("close");
+        }
+	
+	Next [ctxt.PageName() == "battle_end_defeat" && ctxt.StateName() == "home" && ctxt.GetValue("arena_stats") == 2]
+	EndLoadState
+        {
+			WriteLogPhase(false);
+            PressButton("close");
+        }
+	
+	Next [ctxt.PageName() == "battle_end_victory" && ctxt.StateName() == "home" && ctxt.GetValue("arena_stats") == 2]
+	EndLoadState
+        {
+			WriteLogPhase(true);
+            PressButton("close");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+EndLoadState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "load"]
+	EndLoadPauseState {}
+	
+	Next [ctxt.PageName() == "arena_choice"]
+	EndLoadPauseState {}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+EndLoadPauseState
+Entry
+    {
+        StartTimer("state_timeout");
+		StartTimer("end_phase_timeout");
+    }
+{
+	Next [ctxt.GetTimer("end_phase_timeout") >= 10000]
+    ArenaChoice {}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+ArenaReturn
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "arena_main"]
+	MapReturn
+        {
+            PressButton("close");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+MapReturn
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "map" && ctxt.GetValue("check_mail") == 1]
+	MainMail
+        {
+            PressButton("close");
+        }
+	
+	Next [ctxt.PageName() == "main" && ctxt.GetValue("check_mail") == 1]
+	MainMail {}
+	
+	
+	Next [ctxt.PageName() == "map" && ctxt.GetValue("check_mail") != 1]
+	MainReturn
+        {
+            PressButton("close");
+        }
+	
+	Next [ctxt.PageName() == "main" && ctxt.GetValue("check_mail") != 1]
+	MainReturn {}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+MainMail
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "main"]
+	CheckMail 
+		{
+			PressButton("mail");
+		}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+CheckMail
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "mail"]
+	MailReturn 
+	{
+		PressButton("take");
+	}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+MailReturn
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "mail"]
+	MainReturn 
+	{
+		PressButton("close");
+	}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+MainReturn
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "main"]
+	Return {}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+
+Return
+{
+	Next	pop(Success) {}
+}
+
+Error
+{
+	Next    pop(Error) {}
+}
+
+%%
+
+
+//======================================================================================================================
+//======================================================================================================================
+//======================================================================================================================
+//======================================================================================================================
+//======================================================================================================================
+//======================================================================================================================
+
+
+
+%map PortalMap
+%%
+
+MainState 
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "main"]
+	MapState
+        {
+            PressButton("map");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+MapState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "map"]
+	PortalMain
+        {
+            PressButton("portal");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+PortalMain
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "portal_main" && ctxt.GetValue("portal_level") == 0]
+	OpponentState
+        {
+            PressButton("start");
+        }
+	
+	Next [ctxt.PageName() == "portal_main" && ctxt.GetValue("portal_level") != 0]
+	ChangeLevel 
+		{
+			StartCounter("level_counter");
+		}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+ChangeLevel
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "portal_opponent"]
+	PortalMain {}
+		
+    Next [ctxt.PageName() == "portal_main" && std::abs(ctxt.GetValue("portal_level")) == ctxt.GetCounter("level_counter")]
+	OpponentState
+        {
+            PressButton("start");
+        }
+		
+    Next [ctxt.PageName() == "portal_main" && ctxt.GetValue("portal_level") > 0]
+	ChangeLevel
+        {
+            Move("level", 0, 1);
+			IncCounter("level_counter");
+        }
+	
+	Next [ctxt.PageName() == "portal_main" && ctxt.GetValue("portal_level") < 0]
+	ChangeLevel
+        {
+            Move("level", 0, -1);
+			IncCounter("level_counter");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+OpponentState
+Entry
+    {
+        StartTimer("state_timeout");
+		StartTimer("opponent_timeout");
+    }
+{
+    Next [ctxt.PageName() == "portal_main" && ctxt.GetTimer("opponent_timeout") >= ctxt.GetValue("opponent_timeout")]
+	PortalMainReturn {}
+		
+    Next [ctxt.PageName() == "portal_opponent"]
+	BattleLoadState
+        {
+            PressButton("start");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+BattleLoadState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "arena_few"]
+	OpponentReturn
+        {
+            PressButton("close");
+        }
+		
+    Next [ctxt.PageName() == "load"]
+	BattleState {}
+	
+	Next [ctxt.PageName() == "battle"]
+	BattleEndState {}
+	
+	Next [ctxt.PageName() == "warning_hp"]
+	OpponentState 
+	{
+		PressButton("close");
+	}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+BattleState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "battle"]
+	BattleEndState {}
+	
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+BattleEndState
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "battle_end_defeat" && ctxt.StateName() == "home"]
+	PortalMainReturn
+        {
+            PressButton("close");
+        }
+	
+	Next [ctxt.PageName() == "battle_end_victory" && ctxt.StateName() == "home"]
+	PortalMainReturn
+        {
+            PressButton("close");
+        }
+	
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+PortalMainReturn
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "load"]
+	PortalMainReturn {}
+	
+    Next [ctxt.PageName() == "portal_main"]
+	MapReturn
+        {
+            PressButton("close");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+OpponentReturn
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "portal_opponent"]
+	PortalMainReturn
+        {
+            PressButton("close");
+        }
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+MapReturn
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "map"]
+	MainReturn
+        {
+            PressButton("close");
+        }
+	
+    Next [ctxt.PageName() == "main"]
+	Return {}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+MainReturn
+Entry
+    {
+        StartTimer("state_timeout");
+    }
+{
+    Next [ctxt.PageName() == "main"]
+	Return {}
+	
+	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
+    Error {}
+	
+	Next nil {}	
+}
+
+Return
+{
+	Next	pop(Success) {}
+}
+
+Error
+{
+	Next    pop(Error) {}
+}
+
+%%
+
+//======================================================================================================================
+//======================================================================================================================
+//======================================================================================================================
+//======================================================================================================================
+//======================================================================================================================
+//======================================================================================================================
+
+
+
+%map MainMap
+%%
+
+
+MainState 
+{
+	Next [ctxt.PageName() != "main"]
+	StartRecover {}
+
+    Next [ctxt.PageName() == "main" && ctxt.GetValue("program") == 0]
+	ArenaState {}
+	
+	Next [ctxt.PageName() == "main" && ctxt.GetValue("program") == 1]
+	StirState {}
+	
+	Next [ctxt.PageName() == "main" && ctxt.GetValue("program") == 2]
+	PortalState {}
+	
+	Next nil {}	
+}
+
+ArenaState 
+{
+	Next push(ArenaMap::MainState) {}
+	
+	Success MainState {}
+
+	Error Recover {}	
+}
+
+StirState 
+{
+	Next push(StirMap::MainState) {}
+	
+	Success MainState {}
+
+	Error Recover {}	
+}
+
+PortalState 
+{
+	Next push(PortalMap::MainState) {}
+	
+	Success MainState {}
+
+	Error Recover {}	
+}
+
+Recover 
+{
+	Next [ctxt.PageName() == "main"]
+	MainState {}
+	
+	Next [ctxt.PageName() != "main"]
+	StartRecover {}
+	
+	Next nil {}	
+}
+
+StartRecover 
+{
+	Next push(RecoveryMap::MainState) {}
+	
+	Recovered Recover {}
+}
+
+
+%%
+
+
+//======================================================================================================================
+//======================================================================================================================
+//======================================================================================================================
+//======================================================================================================================
+//======================================================================================================================
+//======================================================================================================================
+
+
+%map RecoveryMap
+%%
+
+// battle
+// load
+// bluestacks
+// main
+// unknown
+// 
+
+
+MainState 
+Entry
+    {
+        StartTimer("close_timeout");
+    }
+{
+    Next [ctxt.PageName() == "main"]
+	Return {}
+	
+    Next [ctxt.PageName() == "battle"]
+	MainState {}
+	
+	Next [ctxt.PageName() == "load"]
+	MainState {}
+	
+	Next [ctxt.PageName() == "bluestacks"]
+	Bluestacks {}
+	
+	Next [ctxt.PageName() == "unknown"]
+	Unknown {}
+	
+	Next [ctxt.GetTimer("close_timeout") >= ctxt.GetValue("opponent_timeout")]
+	MainState 
+	{
+		PressButton("close");
+	}	
+
+	Next nil {}	
+}
+
+
+Bluestacks 
+Entry
+    {
+        StartTimer("bluestacks_timeout");
+    }
+{
+    Next [ctxt.PageName() != "bluestacks"]
+	MainState {}
+	
+    Next [ctxt.PageName() == "bluestacks" && ctxt.GetTimer("bluestacks_timeout") >= 60000]
+	Bluestacks 
+	{
+		RunBluestacks();
+	}
+
+	Next nil {}	
+}
+
+Unknown 
+Entry
+    {
+        StartTimer("unknown_timeout");
+    }
+{
+    Next [ctxt.PageName() != "unknown"]
+	MainState {}
+	
+	Next [ctxt.PageName() == "unknown" && ctxt.GetTimer("unknown_timeout") >= 1200000] // ждем 20 минут
+	MainState {}	
+	
+	Next nil {}	
+}
+
+Return
+{
+	Next pop(Recovered) {}
+}
+
+
+%%
+
+
+
+
+
+
+
