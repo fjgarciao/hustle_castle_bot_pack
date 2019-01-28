@@ -77,14 +77,14 @@ Entry
 		PressButton("close");
 	}		
 		
-    Next [ctxt.PageName() == "stir" && ctxt.GetCounter("enemy") < 13]
+    Next [ctxt.PageName() == "stir" && ctxt.GetCounter("enemy") < 16]
 	OpponentState
         {
 			PressButton(ctxt.GetCounter("enemy") + 1);
 			IncCounter("enemy");
         }
 		
-    Next [ctxt.PageName() == "stir" && ctxt.GetCounter("enemy") >= 13]
+    Next [ctxt.PageName() == "stir" && ctxt.GetCounter("enemy") >= 16]
 	MapReturn
         {
             PressButton("close");
@@ -171,6 +171,9 @@ Entry
 {
     Next [ctxt.PageName() == "load"]
 	BattleState {}
+	
+	Next [ctxt.PageName() == "event_battle"]
+	BattleEndState {}
 	
 	Next [ctxt.PageName() == "battle"]
 	BattleEndState {}
@@ -1123,12 +1126,6 @@ Entry
         StartTimer("state_timeout");
     }
 {
-    Next [ctxt.PageName() == "arena_few"]
-	OpponentReturn
-        {
-            PressButton("close");
-        }
-		
     Next [ctxt.PageName() == "load"]
 	BattleState {}
 	

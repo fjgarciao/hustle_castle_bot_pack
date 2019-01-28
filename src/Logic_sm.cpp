@@ -288,7 +288,7 @@ void StirMap_StirState::Next(LogicContext<Logic>& context)
         }
         context.getState().Entry(context);
     }
-    else if (ctxt.PageName() == "stir" && ctxt.GetCounter("enemy") < 13)
+    else if (ctxt.PageName() == "stir" && ctxt.GetCounter("enemy") < 16)
 
     {
         context.getState().Exit(context);
@@ -306,7 +306,7 @@ void StirMap_StirState::Next(LogicContext<Logic>& context)
         }
         context.getState().Entry(context);
     }
-    else if (ctxt.PageName() == "stir" && ctxt.GetCounter("enemy") >= 13)
+    else if (ctxt.PageName() == "stir" && ctxt.GetCounter("enemy") >= 16)
 
     {
         context.getState().Exit(context);
@@ -506,6 +506,14 @@ void StirMap_BattleLoadState::Next(LogicContext<Logic>& context)
         context.getState().Exit(context);
         // No actions.
         context.setState(StirMap::BattleState);
+        context.getState().Entry(context);
+    }
+    else if (ctxt.PageName() == "event_battle")
+
+    {
+        context.getState().Exit(context);
+        // No actions.
+        context.setState(StirMap::BattleEndState);
         context.getState().Entry(context);
     }
     else if (ctxt.PageName() == "battle")
@@ -2683,24 +2691,7 @@ void PortalMap_BattleLoadState::Next(LogicContext<Logic>& context)
 {
     Logic& ctxt = context.getOwner();
 
-    if (ctxt.PageName() == "arena_few")
-    {
-        context.getState().Exit(context);
-        context.clearState();
-        try
-        {
-            ctxt.PressButton("close");
-            context.setState(PortalMap::OpponentReturn);
-        }
-        catch (...)
-        {
-            context.setState(PortalMap::OpponentReturn);
-            throw;
-        }
-        context.getState().Entry(context);
-    }
-    else if (ctxt.PageName() == "load")
-
+    if (ctxt.PageName() == "load")
     {
         context.getState().Exit(context);
         // No actions.
