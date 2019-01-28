@@ -146,16 +146,20 @@ Entry
     {
         StartTimer("state_timeout");
 		StartTimer("opponent_timeout");
+		StartTimer("opponent_start_pause");
     }
 {
     Next [ctxt.PageName() == "stir" && ctxt.GetTimer("opponent_timeout") >= ctxt.GetValue("opponent_timeout")]
 	StirState {}
 		
-    Next [ctxt.PageName() == "stir_opponent"]
+    Next [ctxt.PageName() == "stir_opponent" && ctxt.GetTimer("opponent_start_pause") >= 2000]
 	BattleLoadState
         {
             PressButton("start");
         }
+	
+    Next [ctxt.PageName() == "stir_opponent" && ctxt.GetTimer("opponent_start_pause") < 2000]
+	nil {}	
 	
 	Next [ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout")]
     Error {}

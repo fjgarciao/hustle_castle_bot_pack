@@ -445,6 +445,7 @@ void StirMap_OpponentState::Entry(LogicContext<Logic>& context)
 
     ctxt.StartTimer("state_timeout");
     ctxt.StartTimer("opponent_timeout");
+    ctxt.StartTimer("opponent_start_pause");
 }
 
 void StirMap_OpponentState::Next(LogicContext<Logic>& context)
@@ -458,7 +459,7 @@ void StirMap_OpponentState::Next(LogicContext<Logic>& context)
         context.setState(StirMap::StirState);
         context.getState().Entry(context);
     }
-    else if (ctxt.PageName() == "stir_opponent")
+    else if (ctxt.PageName() == "stir_opponent" && ctxt.GetTimer("opponent_start_pause") >= 2000)
 
     {
         context.getState().Exit(context);
@@ -474,6 +475,11 @@ void StirMap_OpponentState::Next(LogicContext<Logic>& context)
             throw;
         }
         context.getState().Entry(context);
+    }
+    else if (ctxt.PageName() == "stir_opponent" && ctxt.GetTimer("opponent_start_pause") < 2000)
+
+    {
+        // No actions.
     }
     else if (ctxt.GetTimer("state_timeout") >= ctxt.GetValue("state_timeout"))
 
